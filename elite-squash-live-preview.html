@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elite Squash Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700;900&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root{
+    --onyx:#0A0A0B;--charcoal:#16161A;--charcoal-2:#1E1E23;
+    --ivory:#F5F3EE;--ash:#8C8C92;--gold:#C9A24B;--gold-dim:#8F7638;
+    --court-blue:#2E4A63;--line:rgba(245,243,238,0.08);--radius:2px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{background:var(--onyx);color:var(--ivory);font-family:'Inter',sans-serif;overflow-x:hidden;}
+  h1,h2,h3,.display{font-family:'Big Shoulders Display',sans-serif;text-transform:uppercase;letter-spacing:0.01em;line-height:0.92;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+
+  /* ===== PRELOADER ===== */
+  #loader{
+    position:fixed;inset:0;background:#000;z-index:5000;
+    display:flex;align-items:center;justify-content:center;
+  }
+  #loader canvas{display:block;}
+  #loader-label{
+    position:absolute;bottom:64px;left:50%;transform:translateX(-50%);
+    font-family:'IBM Plex Mono';font-size:11px;letter-spacing:0.3em;
+    color:var(--ash);text-transform:uppercase;
+  }
+  #loader-label span{color:var(--gold);}
+
+  #site{opacity:0;}
+  #site.ready{opacity:1;transition:opacity .6s ease;}
+
+  /* trajectory progress line — carries the ball motif from the intro */
+  #trajectory{position:fixed;top:0;left:0;height:2px;width:100%;background:var(--line);z-index:900;}
+  #trajectory-fill{position:fixed;top:0;left:0;height:2px;background:var(--gold);z-index:900;transition:width .05s linear;}
+  #trajectory-ball{position:fixed;top:-3px;left:0;width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px var(--gold);z-index:901;transition:left .05s linear;}
+
+  nav{position:fixed;top:0;left:0;right:0;z-index:800;display:flex;align-items:center;justify-content:space-between;padding:22px 5%;transition:all .4s ease;border-bottom:1px solid transparent;}
+  nav.scrolled{background:rgba(10,10,11,0.7);backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%);border-bottom:1px solid var(--line);padding:14px 5%;}
+  .logo{font-family:'Big Shoulders Display';font-weight:900;font-size:22px;letter-spacing:0.03em;}
+  .logo span{color:var(--gold);}
+  .navlinks{display:flex;gap:36px;list-style:none;}
+  .navlinks a{color:var(--ash);text-decoration:none;font-size:13px;letter-spacing:0.06em;text-transform:uppercase;font-weight:500;transition:color .25s;}
+  .navlinks a:hover{color:var(--ivory);}
+  .btn{display:inline-block;padding:13px 28px;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;font-weight:600;text-decoration:none;border-radius:var(--radius);transition:all .25s;cursor:pointer;border:none;}
+  .btn-gold{background:var(--gold);color:var(--onyx);}
+  .btn-gold:hover{background:#DCB662;}
+  .btn-ghost{border:1px solid var(--line);color:var(--ivory);background:transparent;}
+  .btn-ghost:hover{border-color:var(--gold);color:var(--gold);}
+
+  /* HERO */
+  .hero{height:100vh;position:relative;display:flex;align-items:center;padding:0 5%;overflow:hidden;}
+  #hero-canvas{position:absolute;top:0;right:0;width:58%;height:100%;opacity:0.9;}
+  .hero::before{
+    content:"";position:absolute;inset:0;
+    background-image:linear-gradient(var(--line) 1px, transparent 1px),linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:64px 64px;
+    mask-image:radial-gradient(ellipse at 20% 50%, black 0%, transparent 65%);
+    opacity:0.5;pointer-events:none;
+  }
+  .hero-copy{position:relative;z-index:2;max-width:640px;}
+  .eyebrow{font-family:'IBM Plex Mono';font-size:12px;letter-spacing:0.25em;color:var(--gold);text-transform:uppercase;margin-bottom:22px;}
+  .hero h1{font-size:clamp(44px,7.5vw,104px);font-weight:900;}
+  .hero h1 em{font-style:normal;color:transparent;-webkit-text-stroke:1.5px var(--gold);}
+  .hero p.tag{font-size:16px;color:var(--ash);margin-top:22px;max-width:460px;line-height:1.6;}
+  .hero .cta-row{display:flex;gap:16px;margin-top:44px;}
+  .scroll-cue{position:absolute;bottom:36px;left:5%;font-family:'IBM Plex Mono';font-size:11px;color:var(--ash);letter-spacing:0.15em;display:flex;flex-direction:column;align-items:center;gap:10px;}
+  .scroll-cue::after{content:"";width:1px;height:34px;background:linear-gradient(var(--gold),transparent);animation:pulse 1.8s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:0.3;}50%{opacity:1;}}
+
+  section{padding:120px 5%;position:relative;}
+  .section-head{max-width:640px;margin-bottom:64px;}
+  .section-head .kicker{font-family:'IBM Plex Mono';font-size:12px;letter-spacing:0.2em;color:var(--gold);text-transform:uppercase;display:block;margin-bottom:16px;}
+  .section-head h2{font-size:clamp(32px,5vw,56px);font-weight:700;}
+  .section-head p{color:var(--ash);margin-top:18px;font-size:16px;line-height:1.6;max-width:520px;}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);}
+  .stat{background:var(--onyx);padding:44px 28px;}
+  .stat .num{font-family:'IBM Plex Mono';font-size:44px;color:var(--gold);font-weight:500;}
+  .stat .label{color:var(--ash);font-size:13px;margin-top:8px;letter-spacing:0.04em;text-transform:uppercase;}
+
+  .grid-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);}
+  .card{background:var(--charcoal);padding:40px 32px;transition:background .3s;}
+  .card:hover{background:var(--charcoal-2);}
+  .card .idx{font-family:'IBM Plex Mono';color:var(--gold-dim);font-size:13px;margin-bottom:24px;display:block;}
+  .card h3{font-size:26px;font-weight:700;margin-bottom:10px;}
+  .card p{color:var(--ash);font-size:14px;line-height:1.6;}
+
+  footer{border-top:1px solid var(--line);padding:64px 5% 32px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:40px;}
+  .foot-col h4{font-size:12px;letter-spacing:0.15em;text-transform:uppercase;color:var(--ash);margin-bottom:16px;}
+  .foot-col a{display:block;color:var(--ivory);text-decoration:none;font-size:14px;margin-bottom:10px;opacity:0.85;}
+  .foot-col a:hover{color:var(--gold);}
+
+  .reveal{opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;}
+  .reveal.in{opacity:1;transform:translateY(0);}
+
+  @media(max-width:860px){
+    .navlinks{display:none;}
+    #hero-canvas{width:100%;opacity:0.25;}
+    .stats{grid-template-columns:repeat(2,1fr);}
+    .grid-cards{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <canvas id="loader-canvas"></canvas>
+  <div id="loader-label">ELITE SQUASH ACADEMY <span>·</span> LOADING</div>
+</div>
+
+<div id="site">
+  <div id="trajectory"></div>
+  <div id="trajectory-fill"></div>
+  <div id="trajectory-ball"></div>
+
+  <nav id="nav">
+    <div class="logo">ELITE<span>.</span></div>
+    <ul class="navlinks">
+      <li><a href="#">Academy</a></li>
+      <li><a href="#">Programs</a></li>
+      <li><a href="#">Coaches</a></li>
+      <li><a href="#">Achievements</a></li>
+      <li><a href="#">Branches</a></li>
+    </ul>
+    <a href="#" class="btn btn-gold">Book Trial</a>
+  </nav>
+
+  <section class="hero">
+    <canvas id="hero-canvas"></canvas>
+    <div class="hero-copy">
+      <div class="eyebrow">Nashik · Est. 2016</div>
+      <h1>Where <em>Champions</em><br>Are Built</h1>
+      <p class="tag">India's most interactive squash academy — precision coaching across three Nashik branches, from first serve to national podium.</p>
+      <div class="cta-row">
+        <a href="#" class="btn btn-gold">Book Free Trial</a>
+        <a href="#" class="btn btn-ghost">Explore Academy</a>
+      </div>
+    </div>
+    <div class="scroll-cue">SCROLL</div>
+  </section>
+
+  <section>
+    <div class="stats reveal">
+      <div class="stat"><div class="num">2016</div><div class="label">Founded</div></div>
+      <div class="stat"><div class="num">03</div><div class="label">Nashik Branches</div></div>
+      <div class="stat"><div class="num">500+</div><div class="label">Students Trained</div></div>
+      <div class="stat"><div class="num">12+</div><div class="label">State &amp; National Medalists</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head reveal">
+      <span class="kicker">Programs</span>
+      <h2>A path for every level</h2>
+      <p>Structured coaching tracks from a child's first rally to elite performance training.</p>
+    </div>
+    <div class="grid-cards reveal">
+      <div class="card"><span class="idx">01</span><h3>Kids</h3><p>Ages 6–12. Fundamentals, footwork and racket control through play-based drills.</p></div>
+      <div class="card"><span class="idx">02</span><h3>Adults</h3><p>Fitness-focused coaching for beginners and returning players, any age.</p></div>
+      <div class="card"><span class="idx">03</span><h3>Elite Performance</h3><p>Tournament-track training for competitive state and national-level players.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="foot-col" style="max-width:260px;">
+      <div class="logo" style="margin-bottom:14px;">ELITE<span>.</span></div>
+      <p style="color:var(--ash);font-size:13px;line-height:1.6;">India's most interactive squash academy — Nashik.</p>
+    </div>
+    <div class="foot-col"><h4>Academy</h4><a href="#">About</a><a href="#">Programs</a><a href="#">Coaches</a></div>
+    <div class="foot-col"><h4>Visit</h4><a href="#">Kensington Club</a><a href="#">SSK World Club</a><a href="#">Minatai Thakre Stadium</a></div>
+    <div class="foot-col"><h4>Connect</h4><a href="#">WhatsApp</a><a href="#">Instagram</a><a href="#">Email</a></div>
+  </footer>
+</div>
+
+<script>
+/* ============ PRELOADER: physically bouncing squash ball ============ */
+(function(){
+  const canvas = document.getElementById('loader-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, floorY;
+  function resize(){
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    floorY = H * 0.66;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const ball = {
+    x: W/2, y: -40, vx: (Math.random()*0.6-0.3), vy: 0,
+    r: 16, squashX: 1, squashY: 1
+  };
+  const gravity = 0.85, restitution = 0.62;
+  let bounces = 0, done = false, t0 = performance.now();
+
+  function drawBall(){
+    ctx.save();
+    ctx.translate(ball.x, ball.y);
+    ctx.scale(ball.squashX, ball.squashY);
+    const g = ctx.createRadialGradient(-ball.r*0.35,-ball.r*0.35,1,0,0,ball.r*1.3);
+    g.addColorStop(0,'#3a3a3f');
+    g.addColorStop(0.55,'#1a1a1d');
+    g.addColorStop(1,'#0a0a0b');
+    ctx.beginPath();
+    ctx.arc(0,0,ball.r,0,Math.PI*2);
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(201,162,75,0.5)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
+  }
+  function drawShadow(){
+    const h = Math.max(0, floorY - ball.y);
+    const scale = Math.max(0.15, 1 - h/420);
+    const alpha = Math.max(0.05, 0.35 * scale);
+    ctx.save();
+    ctx.translate(ball.x, floorY + 4);
+    ctx.scale(scale*1.4, scale*0.4);
+    ctx.beginPath();
+    ctx.arc(0,0,ball.r,0,Math.PI*2);
+    ctx.fillStyle = `rgba(0,0,0,${alpha})`;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function frame(now){
+    ctx.clearRect(0,0,W,H);
+    drawShadow();
+
+    ball.vy += gravity;
+    ball.y += ball.vy;
+    ball.x += ball.vx;
+
+    // squash/stretch based on vertical speed
+    const speed = Math.min(Math.abs(ball.vy)/22, 1);
+    ball.squashY = 1 - speed*0.15;
+    ball.squashX = 1 + speed*0.15;
+
+    if(ball.y + ball.r > floorY){
+      ball.y = floorY - ball.r;
+      ball.vy *= -restitution;
+      ball.squashY = 0.55; ball.squashX = 1.5;
+      bounces++;
+    }
+    drawBall();
+
+    const peakHeight = Math.abs(ball.vy);
+    if(bounces >= 4 && peakHeight < 6 && !done){
+      done = true;
+      triggerReveal(ball.x, ball.y);
+      return;
+    }
+    if(now - t0 > 6500 && !done){ done = true; triggerReveal(ball.x, ball.y); return; }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  function triggerReveal(cx, cy){
+    const loader = document.getElementById('loader');
+    const site = document.getElementById('site');
+    site.classList.add('ready');
+    const maxR = Math.hypot(Math.max(cx, W-cx), Math.max(cy, H-cy)) * 2.2;
+    let r = 0;
+    function grow(){
+      r += maxR * 0.055;
+      loader.style.clipPath = `circle(${r}px at ${cx}px ${cy}px)`;
+      loader.style.webkitClipPath = `circle(${r}px at ${cx}px ${cy}px)`;
+      if(r < maxR){ requestAnimationFrame(grow); }
+      else { loader.style.display = 'none'; initHeroScene(); }
+    }
+    loader.style.transition = 'none';
+    requestAnimationFrame(grow);
+  }
+})();
+
+/* ============ NAV + TRAJECTORY PROGRESS ============ */
+const navEl = document.getElementById('nav');
+const fill = document.getElementById('trajectory-fill');
+const trailBall = document.getElementById('trajectory-ball');
+window.addEventListener('scroll', () => {
+  const scrolled = window.scrollY;
+  navEl.classList.toggle('scrolled', scrolled > 40);
+  const max = document.body.scrollHeight - window.innerHeight;
+  const pct = max > 0 ? Math.min(scrolled / max, 1) : 0;
+  fill.style.width = (pct*100) + '%';
+  trailBall.style.left = 'calc(' + (pct*100) + '% - 4px)';
+});
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('in'); });
+}, {threshold:0.15});
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+/* ============ 3D GLASS COURT — hero signature visual ============ */
+function initHeroScene(){
+  const canvas = document.getElementById('hero-canvas');
+  const renderer = new THREE.WebGLRenderer({canvas, alpha:true, antialias:true});
+  const scene = new THREE.Scene();
+  let w = canvas.clientWidth || window.innerWidth*0.58;
+  let h = canvas.clientHeight || window.innerHeight;
+  renderer.setSize(w, h);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  const camera = new THREE.PerspectiveCamera(45, w/h, 0.1, 100);
+  camera.position.set(3.2, 2.2, 6.5);
+  camera.lookAt(0,0.5,0);
+
+  scene.add(new THREE.AmbientLight(0x404050, 1.2));
+  const key = new THREE.PointLight(0xC9A24B, 2, 20);
+  key.position.set(4,5,4);
+  scene.add(key);
+  const rim = new THREE.PointLight(0x2E4A63, 2, 20);
+  rim.position.set(-4,2,-3);
+  scene.add(rim);
+
+  // court cage (edges of a box = glass court walls)
+  const courtGeo = new THREE.BoxGeometry(3.2, 3.6, 4.2);
+  const edges = new THREE.EdgesGeometry(courtGeo);
+  const court = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({color:0xC9A24B, transparent:true, opacity:0.55}));
+  court.position.y = 0.4;
+  scene.add(court);
+
+  // faint glass panels
+  const glassMat = new THREE.MeshPhysicalMaterial({color:0x2E4A63, transparent:true, opacity:0.06, side:THREE.DoubleSide});
+  const glass = new THREE.Mesh(courtGeo, glassMat);
+  glass.position.copy(court.position);
+  scene.add(glass);
+
+  // orbiting gold ball (the rally)
+  const ballGeo = new THREE.SphereGeometry(0.12, 32, 32);
+  const ballMat = new THREE.MeshStandardMaterial({color:0xC9A24B, metalness:0.6, roughness:0.3, emissive:0x3a2e10, emissiveIntensity:0.4});
+  const rallyBall = new THREE.Mesh(ballGeo, ballMat);
+  scene.add(rallyBall);
+
+  // subtle floor grid
+  const grid = new THREE.GridHelper(6, 12, 0x2E4A63, 0x16161A);
+  grid.position.y = -1.4;
+  scene.add(grid);
+
+  let mouseX = 0, mouseY = 0;
+  window.addEventListener('mousemove', (e) => {
+    mouseX = (e.clientX / window.innerWidth - 0.5);
+    mouseY = (e.clientY / window.innerHeight - 0.5);
+  });
+
+  const clock = new THREE.Clock();
+  function animate(){
+    requestAnimationFrame(animate);
+    const t = clock.getElapsedTime();
+    // ball bounces around inside the court, corner to corner
+    rallyBall.position.x = Math.sin(t*0.9) * 1.3;
+    rallyBall.position.z = Math.sin(t*1.3) * 1.7;
+    rallyBall.position.y = 0.4 + Math.abs(Math.sin(t*2.1)) * 1.3;
+
+    court.rotation.y = 0.4 + mouseX*0.4;
+    glass.rotation.y = court.rotation.y;
+    camera.position.x = 3.2 + mouseX*1.2;
+    camera.position.y = 2.2 - mouseY*0.8;
+    camera.lookAt(0,0.5,0);
+
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  window.addEventListener('resize', () => {
+    w = canvas.clientWidth; h = canvas.clientHeight;
+    if(w && h){ camera.aspect = w/h; camera.updateProjectionMatrix(); renderer.setSize(w,h); }
+  });
+}
+</script>
+</body>
+</html>
