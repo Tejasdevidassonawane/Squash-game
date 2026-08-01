@@ -1,7 +1,6 @@
-// =========================
-// Elite Squash Academy
-// script.js
-// =========================
+// =======================================
+// Elite Squash Academy - script.js
+// =======================================
 
 // ---------- Smooth Scroll ----------
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -18,112 +17,110 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
-// ---------- Navbar Shadow ----------
+// ---------- Navbar Effect ----------
 const navbar = document.querySelector("header");
 
 window.addEventListener("scroll", () => {
 
-    if (window.scrollY > 40) {
+    if (!navbar) return;
 
-        navbar.style.background = "rgba(10,10,10,.92)";
-        navbar.style.boxShadow = "0 10px 30px rgba(0,0,0,.4)";
-
+    if (window.scrollY > 50) {
+        navbar.style.background = "rgba(0,0,0,0.92)";
+        navbar.style.boxShadow = "0 10px 25px rgba(0,0,0,.35)";
     } else {
-
-        navbar.style.background = "rgba(10,10,10,.45)";
+        navbar.style.background = "rgba(0,0,0,.45)";
         navbar.style.boxShadow = "none";
-
     }
 
 });
 
-// ---------- Registration Form ----------
+// =======================================
+// Registration Form
+// =======================================
 
 const form = document.getElementById("registrationForm");
 
-if(form){
+if (form) {
 
 form.addEventListener("submit", async function(e){
 
-e.preventDefault();
+    e.preventDefault();
 
-const name=document.getElementById("name").value.trim();
-const age=document.getElementById("age").value.trim();
-const phone=document.getElementById("phone").value.trim();
+    const name = document.getElementById("name").value.trim();
+    const age = document.getElementById("age").value.trim();
+    const phone = document.getElementById("phone").value.trim();
 
-if(name.length<3){
-alert("Please enter your full name.");
-return;
-}
+    if(name.length < 3){
+        alert("Please enter your full name.");
+        return;
+    }
 
-if(age<4 || age>80){
-alert("Please enter a valid age.");
-return;
-}
+    if(age === "" || Number(age) < 4 || Number(age) > 80){
+        alert("Please enter a valid age.");
+        return;
+    }
 
-if(!/^[0-9]{10}$/.test(phone)){
-alert("Enter a valid 10 digit phone number.");
-return;
-}
+    if(!/^[0-9]{10}$/.test(phone)){
+        alert("Please enter a valid 10 digit phone number.");
+        return;
+    }
 
-const button=form.querySelector("button");
+    const button = form.querySelector("button");
 
-button.disabled=true;
-button.innerHTML="Submitting...";
+    button.disabled = true;
+    button.innerHTML = "Submitting...";
 
-const data={
-name:name,
-age:age,
-phone:phone
-};
+    try{
 
-try{
+        const formData = new FormData();
 
-const response=await fetch("https://script.google.com/macros/s/AKfycbzgR0vS7McEQufNmuwpsiKsyy9qXcwUa_FLgXCEefJ5q2c3vaPcZ6Qs3SFXGT8NTaQ_tw/exec",{
+        formData.append("name", name);
+        formData.append("age", age);
+        formData.append("phone", phone);
 
-method:"POST",
+        const response = await fetch(
+            "https://script.google.com/macros/s/AKfycbzgR0vS7McEQufNmuwpsiKsyy9qXcwUa_FLgXCEefJ5q2c3vaPcZ6Qs3SFXGT8NTaQ_tw/exec",
+            {
+                method: "POST",
+                body: formData
+            }
+        );
 
-headers:{
-"Content-Type":"application/json"
-},
+        if(response.ok){
 
-body:JSON.stringify(data)
+            showSuccess();
 
-});
+            form.reset();
 
-if(response.ok){
+        }else{
 
-showSuccess();
+            alert("Submission failed.");
 
-form.reset();
+        }
 
-}else{
+    }
+    catch(error){
 
-alert("Submission failed.");
+        console.error(error);
 
-}
+        alert("Unable to connect.");
 
-}catch(error){
+    }
 
-console.log(error);
-
-alert("Unable to connect.");
-
-}
-
-button.disabled=false;
-
-button.innerHTML="Register Now";
+    button.disabled = false;
+    button.innerHTML = "Register Now";
 
 });
 
 }
 
-// ---------- Success Popup ----------
+// =======================================
+// Success Popup
+// =======================================
 
 function showSuccess(){
 
-let popup=document.createElement("div");
+const popup=document.createElement("div");
 
 popup.innerHTML=`
 
@@ -131,21 +128,11 @@ popup.innerHTML=`
 
 <div class="success-box">
 
-<h2>🏸 Registration Successful</h2>
+<h2>🏸 Registration Successful!</h2>
 
-<p>
+<p>Thank you for registering.</p>
 
-Thank you for registering with
-
-<strong>Elite Squash Academy</strong>
-
-</p>
-
-<p>
-
-We'll contact you shortly.
-
-</p>
+<p>We'll contact you shortly.</p>
 
 <button id="closePopup">
 
@@ -161,7 +148,7 @@ Close
 
 document.body.appendChild(popup);
 
-document.getElementById("closePopup").onclick=()=>{
+document.getElementById("closePopup").onclick=function(){
 
 popup.remove();
 
@@ -169,9 +156,11 @@ popup.remove();
 
 }
 
-// ---------- Fade In Animation ----------
+// =======================================
+// Fade Animation
+// =======================================
 
-const observer=new IntersectionObserver((entries)=>{
+const observer = new IntersectionObserver((entries)=>{
 
 entries.forEach(entry=>{
 
@@ -184,7 +173,7 @@ entry.target.classList.add("show");
 });
 
 },{
-threshold:.15
+threshold:0.15
 });
 
 document.querySelectorAll("section,.card,.batch-box").forEach(el=>{
@@ -195,17 +184,19 @@ observer.observe(el);
 
 });
 
-// ---------- Back To Top ----------
+// =======================================
+// Back To Top Button
+// =======================================
 
 const topBtn=document.createElement("button");
 
-topBtn.innerHTML="↑";
-
 topBtn.id="topBtn";
+
+topBtn.innerHTML="↑";
 
 document.body.appendChild(topBtn);
 
-topBtn.onclick=()=>{
+topBtn.onclick=function(){
 
 window.scrollTo({
 
@@ -219,11 +210,21 @@ behavior:"smooth"
 
 window.addEventListener("scroll",()=>{
 
-topBtn.style.display=window.scrollY>400?"flex":"none";
+if(window.scrollY>500){
+
+topBtn.style.display="flex";
+
+}else{
+
+topBtn.style.display="none";
+
+}
 
 });
 
-// ---------- Progress Bar ----------
+// =======================================
+// Scroll Progress Bar
+// =======================================
 
 const progress=document.createElement("div");
 
@@ -235,13 +236,15 @@ window.addEventListener("scroll",()=>{
 
 const total=document.documentElement.scrollHeight-window.innerHeight;
 
-const progressWidth=(window.scrollY/total)*100;
+const percent=(window.scrollY/total)*100;
 
-progress.style.width=progressWidth+"%";
+progress.style.width=percent+"%";
 
 });
 
-// ---------- Active Nav ----------
+// =======================================
+// Active Navigation
+// =======================================
 
 const sections=document.querySelectorAll("section");
 
